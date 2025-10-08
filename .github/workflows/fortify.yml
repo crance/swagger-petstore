@@ -61,6 +61,8 @@ jobs:
         if: ${{ github.event.inputs.scan_type == 'fod-sast' }}
         run: |
           ${SC_CLIENT_CMD} package -oss
+        env:
+          SCANCENTRAL_JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
       - name: Fortify on Demand - SAST
         if: ${{ github.event.inputs.scan_type == 'fod-sast' }}
         run: |
