@@ -67,7 +67,8 @@ jobs:
         if: ${{ github.event.inputs.scan_type == 'fod-sast' }}
         run: |
           ${FCLI_CMD} fod session login --url ${{ vars.FOD_PORTAL_URL }} --client-id ${{secrets.FOD_API_KEY}} --client-secret ${{secrets.FOD_API_SECRET}}
-          ${FCLI_CMD} fod sast-scan start -f fortifypackage.zip --rel "${{env.FOD_RELEASE}}" --notes="${{env.FOD_UPLOADER_NOTES}}"
+          ${FCLI_CMD} fod sast-scan start -f fortifypackage.zip --rel "${{env.FOD_RELEASE}}" --notes="${{env.FOD_UPLOADER_NOTES}}" --store fod_sast_scan
+          ${FCLI_CMD} fod sast-scan wait-for ::fod_sast_scan::
           ${FCLI_CMD} fod session logout
 
       # - name: Fortify on Demand - SAST
@@ -98,7 +99,8 @@ jobs:
         if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
         run: |
           ${FCLI_CMD} ssc session login --url "${{ secrets.SSC_URL }}" --token "${{ secrets.SSC_TOKEN }}" --sc-sast-url "${{secrets.SCSAST_URL}}/scancentral-ctrl" --client-auth-token "${{secrets.CLIENT_AUTH_TOKEN}}"
-          ${FCLI_CMD} sc-sast scan start -f fortifypackage.zip --rel "${{env.FOD_RELEASE}}" --notes="${{env.FOD_UPLOADER_NOTES}}"
+          ${FCLI_CMD} sc-sast scan start -f fortifypackage.zip --publish-to "${{env.SSC_APP_NAME}}:${{env.SSC_APP_VER_NAME}}" --sargs "${{ env.SC_SAST_SARGS }}" --store sc_sast_scan
+          ${FCLI_CMD} sc-sast scan wait-for ::sc_sast_scan::
           ${FCLI_CMD} ssc session logout
 
       # - name: Scancentral - SAST
