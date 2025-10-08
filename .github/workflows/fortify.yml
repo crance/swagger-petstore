@@ -57,7 +57,7 @@ jobs:
           fcli: latest
           sc-client: latest
 
-      - name: Package Source Code
+      - name: Fortify on Demand -Package Source Code
         if: ${{ github.event.inputs.scan_type == 'fod-sast' }}
         run: |
           ${SC_CLIENT_CMD} package -oss
@@ -88,19 +88,32 @@ jobs:
       #     # DO_EXPORT: true
       #     DO_PACKAGE_DEBUG: true
 
-      - name: Scancentral - SAST
+      - name: ScanCentral -Package Source Code
         if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
-        uses: fortify/github-action@v2
-        with:
-          sast-scan: true
+        run: |
+          ${SC_CLIENT_CMD} package
         env:
-          SSC_URL: ${{secrets.SSC_URL}}
-          SSC_TOKEN: ${{secrets.SSC_TOKEN}}
-          SC_SAST_TOKEN: ${{secrets.CLIENT_AUTH_TOKEN}}
-          SSC_APPVERSION: "${{env.SSC_APP_NAME}}:${{env.SSC_APP_VER_NAME}}"
-          SSC_LOGIN_EXTRA_OPTS: --sc-sast-url ${{secrets.SCSAST_URL}}/scancentral-ctrl
-          SC_SAST_SCAN_EXTRA_OPTS: --sargs "${{ env.SC_SAST_SARGS }}"
-          DO_PACKAGE_DEBUG: true
-          DO_WAIT: true
+          SCANCENTRAL_JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
+      - name: ScanCentral - SAST
+        if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
+        run: |
+          ${FCLI_CMD} ssc session login --url ${{ secrets.SSC_URL }} --token ${{ secrets.SSC_TOKEN }} --sc-sast-url ${{secrets.SCSAST_URL}} --client-auth-token ${{secrets.CLIENT_AUTH_TOKEN}}
+          ${FCLI_CMD} sc-sast scan start -f fortifypackage.zip --rel "${{env.FOD_RELEASE}}" --notes="${{env.FOD_UPLOADER_NOTES}}"
+          ${FCLI_CMD} ssc session logout
+
+      # - name: Scancentral - SAST
+      #   if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
+      #   uses: fortify/github-action@v2
+      #   with:
+      #     sast-scan: true
+      #   env:
+      #     SSC_URL: ${{secrets.SSC_URL}}
+      #     SSC_TOKEN: ${{secrets.SSC_TOKEN}}
+      #     SC_SAST_TOKEN: ${{secrets.CLIENT_AUTH_TOKEN}}
+      #     SSC_APPVERSION: "${{env.SSC_APP_NAME}}:${{env.SSC_APP_VER_NAME}}"
+      #     SSC_LOGIN_EXTRA_OPTS: --sc-sast-url ${{secrets.SCSAST_URL}}/scancentral-ctrl
+      #     SC_SAST_SCAN_EXTRA_OPTS: --sargs "${{ env.SC_SAST_SARGS }}"
+      #     DO_PACKAGE_DEBUG: true
+      #     DO_WAIT: true
 
 
