@@ -67,7 +67,7 @@ jobs:
         if: ${{ github.event.inputs.scan_type == 'fod-sast' }}
         run: |
           ${FCLI_CMD} fod session login --url ${{ vars.FOD_PORTAL_URL }} --client-id ${{secrets.FOD_API_KEY}} --client-secret ${{secrets.FOD_API_SECRET}}
-          ${FCLI_CMD} -f fortifypackage.zip --rel "${{env.FOD_RELEASE}}" --notes="${{env.FOD_UPLOADER_NOTES}}"
+          ${FCLI_CMD} fod sast-scan start -f fortifypackage.zip --rel "${{env.FOD_RELEASE}}" --notes="${{env.FOD_UPLOADER_NOTES}}"
           ${FCLI_CMD} fod session logout
 
       # - name: Fortify on Demand - SAST
