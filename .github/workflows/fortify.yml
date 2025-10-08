@@ -1,0 +1,76 @@
+# Use the generic fortify/github-action to submit Fortify scans.
+# If granular controls are required, use the following to setup the use shell commands to call scancentral and fodupload
+# - fortify/github-action/setup@v1
+# 
+# Details of the tools definitions can be found in:
+# - https://github.com/fortify/github-action/blob/main/setup/src/constants.ts
+# - https://github.com/fortify/tool-definitions/tree/main/v1
+# 
+# If tools are needed to be hosted in airgap environment, provide the tools definition file via `TOOL_DEFINITIONS` variable when using `fortify/github-action`.
+# A sample of the tools definition file can be found in:
+# - https://github.com/fortify/tool-definitions/releases/download/v1/tool-definitions.yaml.zip
+
+name: Fortify SAST
+on:
+  workflow_dispatch:  # Allows manual trigger with inputs
+    inputs:
+      scan_type:
+        description: 'Choose scan type'
+        required: true
+        default: 'fod-sast'
+        type: choice
+        options:
+          - fod-sast
+          - sc-sast
+
+env:
+  FOD_RELEASE_ID: "Petstore:v2"
+  FOD_UPLOADER_NOTES: "Triggered by GitHub Actions Run ${{ github.run_number }}"
+
+  SSC_APP_NAME: petstore
+  SSC_APP_VER_NAME: "v2"
+
+  SC_SAST_SARGS: "'-debug' '-verbose' '-build-label' 'GitHub Actions Run ${{ github.run_number }}'"
+
+jobs:
+  fortify-sast:
+    name: Fortify SAST Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Fortify on Demand - SAST
+        if: ${{ github.event.inputs.scan_type == 'fod-sast' }}
+        uses: fortify/github-action@v2
+        with:
+          sast-scan: true
+          debricked-sca-scan: true
+        env:
+          FOD_URL: ${{ vars.FOD_PORTAL_URL }}
+          FOD_CLIENT_ID: ${{secrets.FOD_API_KEY}}
+          FOD_CLIENT_SECRET: ${{secrets.FOD_API_SECRET}}
+          FOD_RELEASE: ${{env.FOD_RELEASE_ID}}
+          # FOD_RELEASE: MyApp:MyRelease
+          EXTRA_PACKAGE_OPTS: -oss
+          FOD_SAST_SCAN_EXTRA_OPTS: --notes="${{env.FOD_UPLOADER_NOTES}}"
+          DO_WAIT: true
+          # DO_EXPORT: true
+          DO_PACKAGE_DEBUG: true
+
+      - name: Scancentral - SAST
+        if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
+        uses: fortify/github-action@v2
+        with:
+          sast-scan: true
+        env:
+          SSC_URL: ${{secrets.SSC_URL}}
+          SSC_TOKEN: ${{secrets.SSC_TOKEN}}
+          SC_SAST_TOKEN: ${{secrets.CLIENT_AUTH_TOKEN}}
+          SSC_APPVERSION: "${{env.SSC_APP_NAME}}:${{env.SSC_APP_VER_NAME}}"
+          SSC_LOGIN_EXTRA_OPTS: --sc-sast-url ${{secrets.SCSAST_URL}}/scancentral-ctrl
+          SC_SAST_SCAN_EXTRA_OPTS: --sargs "${{ env.SC_SAST_SARGS }}"
+          DO_PACKAGE_DEBUG: true
+          DO_WAIT: true
+
+
