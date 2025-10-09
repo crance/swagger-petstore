@@ -114,7 +114,8 @@ jobs:
         if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
         run: |          
           echo "client_auth_token=${{secrets.CLIENT_AUTH_TOKEN}}" > ${SC_CLIENT_INSTALL_DIR}/Core/config/client.properties
-          cat ${SC_CLIENT_INSTALL_DIR}/Core/config/client.properties
+          echo "restapi_connect_timeout=60000" >> ${SC_CLIENT_INSTALL_DIR}/Core/config/client.properties
+          echo "restapi_read_timeout=70000" >> ${SC_CLIENT_INSTALL_DIR}/Core/config/client.properties
 
       - name: ScanCentral - SAST
         if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
