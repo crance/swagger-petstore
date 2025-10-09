@@ -119,6 +119,15 @@ jobs:
         if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
         run: ${SC_CLIENT_CMD} -url "${{secrets.SCSAST_URL}}/scancentral-ctrl" -ssctoken "${{ secrets.SSC_TOKEN }}" start -upload -application "${{env.SSC_APP_NAME}}" -version "${{env.SSC_APP_VER_NAME}}" -projroot ".fortify" -uptoken "${{ secrets.SSC_TOKEN }}" 
 
+      # Always upload the .fortify folder so artifacts are available even if the scan step fails
+      - name: Upload Fortify artifacts (.fortify)
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: fortify-artifacts
+          path: .fortify
+          retention-days: 1
+
       # - name: Scancentral - SAST
       #   if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
       #   uses: fortify/github-action@v2
