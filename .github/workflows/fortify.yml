@@ -89,19 +89,26 @@ jobs:
       #     # DO_EXPORT: true
       #     DO_PACKAGE_DEBUG: true
 
-      - name: ScanCentral -Package Source Code
-        if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
-        run: |
-          ${SC_CLIENT_CMD} package
-        env:
-          SCANCENTRAL_JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
+      # - name: ScanCentral -Package Source Code
+      #   if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
+      #   run: |
+      #     ${SC_CLIENT_CMD} package
+      #   env:
+      #     SCANCENTRAL_JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
+
+      # - name: ScanCentral - SAST
+      #   if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
+      #   run: |
+      #     ${FCLI_CMD} ssc session login --url "${{ secrets.SSC_URL }}" --token "${{ secrets.SSC_TOKEN }}" --sc-sast-url "${{secrets.SCSAST_URL}}/scancentral-ctrl" --client-auth-token "${{secrets.CLIENT_AUTH_TOKEN}}"
+      #     ${FCLI_CMD} sc-sast scan start -f fortifypackage.zip --publish-to "${{env.SSC_APP_NAME}}:${{env.SSC_APP_VER_NAME}}" --store sc_sast_scan --no-replace
+      #     ${FCLI_CMD} sc-sast scan wait-for ::sc_sast_scan::
+      #     ${FCLI_CMD} ssc session logout
+
       - name: ScanCentral - SAST
         if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
         run: |
-          ${FCLI_CMD} ssc session login --url "${{ secrets.SSC_URL }}" --token "${{ secrets.SSC_TOKEN }}" --sc-sast-url "${{secrets.SCSAST_URL}}/scancentral-ctrl" --client-auth-token "${{secrets.CLIENT_AUTH_TOKEN}}"
-          ${FCLI_CMD} sc-sast scan start -f fortifypackage.zip --publish-to "${{env.SSC_APP_NAME}}:${{env.SSC_APP_VER_NAME}}" --store sc_sast_scan --no-replace
-          ${FCLI_CMD} sc-sast scan wait-for ::sc_sast_scan::
-          ${FCLI_CMD} ssc session logout
+          echo "client_auth_token=${{secrets.CLIENT_AUTH_TOKEN}}" > $${SC_CLIENT_INSTALL_DIR}/Core/config/client.properties
+          ${SC_CLIENT_CMD} -url "${{ secrets.SCSAST_URL }}/scancentral-ctrl" -ssctoken "${{ secrets.SSC_TOKEN }}" start -upload -application "${{env.SSC_APP_NAME}}" -version "${{env.SSC_APP_VER_NAME}}" -uptoken "${{ secrets.SSC_TOKEN }}" -scan
 
       # - name: Scancentral - SAST
       #   if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
