@@ -112,24 +112,17 @@ jobs:
 
       - name: ScanCentral - Setup client.properties
         if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
-        run: |
+        run: |          
+          cat ${SC_CLIENT_INSTALL_DIR}/Core/config/client.properties
           echo "client_auth_token=${{secrets.CLIENT_AUTH_TOKEN}}" > ${SC_CLIENT_INSTALL_DIR}/Core/config/client.properties
+          cat ${SC_CLIENT_INSTALL_DIR}/Core/config/client.properties
 
       - name: ScanCentral - SAST
         if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
-        run: ${SC_CLIENT_CMD} -url "${{secrets.SCSAST_URL}}/scancentral-ctrl" -ssctoken "${{ secrets.SSC_TOKEN }}" start -upload -application "${{env.SSC_APP_NAME}}" -version "${{env.SSC_APP_VER_NAME}}" -projroot ".fortify" -uptoken "${{ secrets.SSC_TOKEN }}" 
-
-      # Always upload the .fortify folder so artifacts are available even if the scan step fails
-      - name: Upload Fortify artifacts (.fortify)
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: fortify-artifacts
-          path: .fortify
-          retention-days: 1
+        run: ${SC_CLIENT_CMD} -url "${{secrets.SCSAST_URL}}/scancentral-ctrl" -ssctoken "${{ secrets.SSC_TOKEN }}" start -upload -application "${{env.SSC_APP_NAME}}" -version "${{env.SSC_APP_VER_NAME}}" -uptoken "${{ secrets.SSC_TOKEN }}" 
 
       # Archive ScanCentral runner logs (any version) and upload them as an artifact
-      - name: Archive ScanCentral runner logs
+      - name: Collect ScanCentral runner logs into artifacts/
         if: ${{ always() }}
         run: |
           set -euo pipefail
@@ -142,23 +135,20 @@ jobs:
               echo "Adding logs from: $d"
               # preserve directory structure under artifacts/
               rel=$(realpath --relative-to="$HOME" "$d")
-              destdir="artifacts/$rel"
-              mkdir -p "$(dirname "$destdir")"
+              mkdir -p "artifacts/$(dirname "$rel")"
               cp -a "$d" "artifacts/$(dirname "$rel")/"
             fi
           done
           if [ "$found" = "false" ]; then
             echo "No ScanCentral runner log directories found. Creating empty placeholder." > artifacts/no-scancentral-logs.txt
           fi
-          tar -czf scancentral-runner-logs.tar.gz -C artifacts .
-        shell: bash
 
       - name: Upload ScanCentral runner logs
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: scancentral-runner-logs
-          path: scancentral-runner-logs.tar.gz
+          path: artifacts/*
           retention-days: 1
 
       # - name: Scancentral - SAST
