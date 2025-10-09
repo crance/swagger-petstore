@@ -115,6 +115,7 @@ jobs:
         run: |          
           cat ${SC_CLIENT_INSTALL_DIR}/Core/config/client.properties
           echo "client_auth_token=${{secrets.CLIENT_AUTH_TOKEN}}" > ${SC_CLIENT_INSTALL_DIR}/Core/config/client.properties
+          echo "aaaa"
           cat ${SC_CLIENT_INSTALL_DIR}/Core/config/client.properties
 
       - name: ScanCentral - SAST
