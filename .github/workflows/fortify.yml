@@ -123,6 +123,14 @@ jobs:
         env:
           SCANCENTRAL_JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
 
+      - name: Cache local Maven repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
       - name: Upload fortifypackage.zip
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
