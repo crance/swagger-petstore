@@ -142,36 +142,20 @@ jobs:
       - name: ScanCentral - SAST
         if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
         run: |
-          ${SC_CLIENT_CMD} -debug -url "${{vars.SCSAST_URL}}/scancentral-ctrl" -ssctoken "${{ secrets.SSC_TOKEN }}" start --job-file "fortifypackage.zip" -upload -application "${{env.SSC_APP_NAME}}" -version "${{env.SSC_APP_VER_NAME}}" -uptoken "${{ secrets.SSC_TOKEN }}" 
+          ${SC_CLIENT_CMD} -debug -url "${{vars.SCSAST_URL}}/scancentral-ctrl" -ssctoken "${{ secrets.SSC_TOKEN }}" start --package "fortifypackage.zip" -upload -application "${{env.SSC_APP_NAME}}" -version "${{env.SSC_APP_VER_NAME}}" -uptoken "${{ secrets.SSC_TOKEN }}" 
 
       # Archive ScanCentral runner logs (any version) and upload them as an artifact
       - name: Collect ScanCentral runner logs into artifacts/
         if: ${{ always() }}
         run: |
-          set -euo pipefail
-          echo "Looking for ScanCentral runner logs under $HOME/.fortify/scancentral-*/log"
-          mkdir -p artifacts
-          found=false
-          for d in "$HOME"/.fortify/scancentral-*/log; do
-            if [ -d "$d" ]; then
-              found=true
-              echo "Adding logs from: $d"
-              # preserve directory structure under artifacts/
-              rel=$(realpath --relative-to="$HOME" "$d")
-              mkdir -p "artifacts/$(dirname "$rel")"
-              cp -a "$d" "artifacts/$(dirname "$rel")/"
-            fi
-          done
-          if [ "$found" = "false" ]; then
-            echo "No ScanCentral runner log directories found. Creating empty placeholder." > artifacts/no-scancentral-logs.txt
-          fi
+          cp -r "$HOME"/.fortify .
 
       - name: Upload ScanCentral runner logs
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: scancentral-runner-logs
-          path: artifacts/*
+          path: .fortify
           retention-days: 1
 
       # - name: Scancentral - SAST
