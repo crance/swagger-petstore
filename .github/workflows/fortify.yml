@@ -104,11 +104,20 @@ jobs:
       #     ${FCLI_CMD} sc-sast scan wait-for ::sc_sast_scan::
       #     ${FCLI_CMD} ssc session logout
 
-      - name: ScanCentral - SAST
+      # - name: ScanCentral - SAST
+      #   if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
+      #   run: |
+      #     echo "client_auth_token=${{secrets.CLIENT_AUTH_TOKEN}}" > ${SC_CLIENT_INSTALL_DIR}/Core/config/client.properties
+      #     ${SC_CLIENT_CMD} -url "${{secrets.SCSAST_URL}}/scancentral-ctrl" -ssctoken "${{ secrets.SSC_TOKEN }}" start -upload -application "${{env.SSC_APP_NAME}}" -version "${{env.SSC_APP_VER_NAME}}" -projroot ".fortify" -uptoken "${{ secrets.SSC_TOKEN }}" 
+
+      - name: ScanCentral - Setup client.properties
         if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
         run: |
           echo "client_auth_token=${{secrets.CLIENT_AUTH_TOKEN}}" > ${SC_CLIENT_INSTALL_DIR}/Core/config/client.properties
-          ${SC_CLIENT_CMD} -url "${{ secrets.SCSAST_URL }}/scancentral-ctrl" -ssctoken "${{ secrets.SSC_TOKEN }}" start -upload -application "${{env.SSC_APP_NAME}}" -version "${{env.SSC_APP_VER_NAME}}" -uptoken "${{ secrets.SSC_TOKEN }}" 
+
+      - name: ScanCentral - SAST
+        if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
+        run: ${SC_CLIENT_CMD} -url "${{secrets.SCSAST_URL}}/scancentral-ctrl" -ssctoken "${{ secrets.SSC_TOKEN }}" start -upload -application "${{env.SSC_APP_NAME}}" -version "${{env.SSC_APP_VER_NAME}}" -projroot ".fortify" -uptoken "${{ secrets.SSC_TOKEN }}" 
 
       # - name: Scancentral - SAST
       #   if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
