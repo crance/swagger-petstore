@@ -113,14 +113,12 @@ jobs:
       - name: ScanCentral - Setup client.properties
         if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
         run: |          
-          cat ${SC_CLIENT_INSTALL_DIR}/Core/config/client.properties
           echo "client_auth_token=${{secrets.CLIENT_AUTH_TOKEN}}" > ${SC_CLIENT_INSTALL_DIR}/Core/config/client.properties
-          echo "aaaa"
           cat ${SC_CLIENT_INSTALL_DIR}/Core/config/client.properties
 
       - name: ScanCentral - SAST
         if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
-        run: ${SC_CLIENT_CMD} -debug -url "${{secrets.SCSAST_URL}}/scancentral-ctrl" -ssctoken "${{ secrets.SSC_TOKEN }}" start -upload -application "${{env.SSC_APP_NAME}}" -version "${{env.SSC_APP_VER_NAME}}" -uptoken "${{ secrets.SSC_TOKEN }}" 
+        run: ${SC_CLIENT_CMD} -debug -url "${{vars.SCSAST_URL}}/scancentral-ctrl" -ssctoken "${{ secrets.SSC_TOKEN }}" start -upload -application "${{env.SSC_APP_NAME}}" -version "${{env.SSC_APP_VER_NAME}}" -uptoken "${{ secrets.SSC_TOKEN }}" 
 
       # Archive ScanCentral runner logs (any version) and upload them as an artifact
       - name: Collect ScanCentral runner logs into artifacts/
