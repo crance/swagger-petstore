@@ -128,6 +128,39 @@ jobs:
           path: .fortify
           retention-days: 1
 
+      # Archive ScanCentral runner logs (any version) and upload them as an artifact
+      - name: Archive ScanCentral runner logs
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          echo "Looking for ScanCentral runner logs under $HOME/.fortify/scancentral-*/log"
+          mkdir -p artifacts
+          found=false
+          for d in "$HOME"/.fortify/scancentral-*/log; do
+            if [ -d "$d" ]; then
+              found=true
+              echo "Adding logs from: $d"
+              # preserve directory structure under artifacts/
+              rel=$(realpath --relative-to="$HOME" "$d")
+              destdir="artifacts/$rel"
+              mkdir -p "$(dirname "$destdir")"
+              cp -a "$d" "artifacts/$(dirname "$rel")/"
+            fi
+          done
+          if [ "$found" = "false" ]; then
+            echo "No ScanCentral runner log directories found. Creating empty placeholder." > artifacts/no-scancentral-logs.txt
+          fi
+          tar -czf scancentral-runner-logs.tar.gz -C artifacts .
+        shell: bash
+
+      - name: Upload ScanCentral runner logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: scancentral-runner-logs
+          path: scancentral-runner-logs.tar.gz
+          retention-days: 1
+
       # - name: Scancentral - SAST
       #   if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
       #   uses: fortify/github-action@v2
