@@ -21,6 +21,11 @@ jobs:
         with:
           export-path: true
           fcli: latest
+      - name: Use Jar based FCLI
+        run: |
+          ${FCLI_CMD} tool fcli list-platforms
+          ${FCLI_CMD} tool fcli install --platform java
+          ${FCLI_CMD} tool fcli list
 
       - name: Setup Aviator Prerequisites
         run: |
