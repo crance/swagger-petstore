@@ -22,9 +22,12 @@ on:
         options:
           - fod-sast
           - sc-sast
+  push:
+    branches:
+      - 'dev/*'
 
 env:
-  FOD_RELEASE_ID: "Petstore:v2"
+  FOD_RELEASE: "Petstore:v2"
   FOD_UPLOADER_NOTES: "Triggered by GitHub Actions Run ${{ github.run_number }}"
 
   SSC_APP_NAME: petstore
@@ -36,41 +39,103 @@ jobs:
   fortify-sast:
     name: Fortify SAST Scan
     runs-on: ubuntu-latest
+    env:
+      # Compute SCAN_TYPE: if this run is a push to dev/* use sc-sast, otherwise
+      # prefer the workflow_dispatch input when present, falling back to fod-sast
+      SCAN_TYPE: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/dev/') && 'sc-sast' || (github.event.inputs.scan_type != '' && github.event.inputs.scan_type) || 'fod-sast' }}
+    strategy:
+      matrix:
+        java: [ 8 ]
+        maven: [ '3.8.8' ]
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
-      - name: Fortify on Demand - SAST
-        if: ${{ github.event.inputs.scan_type == 'fod-sast' }}
-        uses: fortify/github-action@v2
-        with:
-          sast-scan: true
-          debricked-sca-scan: true
-        env:
-          FOD_URL: ${{ vars.FOD_PORTAL_URL }}
-          FOD_CLIENT_ID: ${{secrets.FOD_API_KEY}}
-          FOD_CLIENT_SECRET: ${{secrets.FOD_API_SECRET}}
-          FOD_RELEASE: ${{env.FOD_RELEASE_ID}}
-          # FOD_RELEASE: MyApp:MyRelease
-          EXTRA_PACKAGE_OPTS: -oss
-          FOD_SAST_SCAN_EXTRA_OPTS: --notes="${{env.FOD_UPLOADER_NOTES}}"
-          DO_WAIT: true
-          # DO_EXPORT: true
-          DO_PACKAGE_DEBUG: true
 
-      - name: Scancentral - SAST
-        if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
-        uses: fortify/github-action@v2
+      - name: Set up Maven
+        uses: s4u/setup-maven-action@v1.19.0
         with:
-          sast-scan: true
-        env:
-          SSC_URL: ${{secrets.SSC_URL}}
-          SSC_TOKEN: ${{secrets.SSC_TOKEN}}
-          SC_SAST_TOKEN: ${{secrets.CLIENT_AUTH_TOKEN}}
-          SSC_APPVERSION: "${{env.SSC_APP_NAME}}:${{env.SSC_APP_VER_NAME}}"
-          SSC_LOGIN_EXTRA_OPTS: --sc-sast-url ${{secrets.SCSAST_URL}}/scancentral-ctrl
-          SC_SAST_SCAN_EXTRA_OPTS: --sargs "${{ env.SC_SAST_SARGS }}"
-          DO_PACKAGE_DEBUG: true
-          DO_WAIT: true
+          java-version: ${{ matrix.java }}
+          maven-version: ${{ matrix.maven }}
+      - name: Cache local Maven repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Setup Fortify tools
+        uses: fortify/github-action/setup@v2
+        with:
+          export-path: true
+          fcli: latest
+          sc-client: latest
+
+      - name: Fortify on Demand -Package Source Code
+        if: ${{ env.SCAN_TYPE == 'fod-sast' }}
+        run: |
+          ${SC_CLIENT_CMD} package -oss
+      - name: ScanCentral -Package Source Code
+        if: ${{ env.SCAN_TYPE == 'sc-sast' }}
+        run: |
+          ${SC_CLIENT_CMD} package
+
+      - name: Fortify on Demand - SAST
+        if: ${{ env.SCAN_TYPE == 'fod-sast' }}
+        run: |
+          ${FCLI_CMD} fod session login --url ${{ vars.FOD_PORTAL_URL }} --client-id ${{secrets.FOD_API_KEY}} --client-secret ${{secrets.FOD_API_SECRET}}
+          ${FCLI_CMD} fod sast-scan start -f fortifypackage.zip --rel "${{env.FOD_RELEASE}}" --notes="${{env.FOD_UPLOADER_NOTES}}" --store fod_sast_scan
+          ${FCLI_CMD} fod sast-scan wait-for ::fod_sast_scan::
+          ${FCLI_CMD} fod session logout
+
+  # - name: Fortify on Demand - SAST
+  #   if: ${{ env.SCAN_TYPE == 'fod-sast' }}
+      #   uses: fortify/github-action@v2
+      #   with:
+      #     sast-scan: true
+      #     debricked-sca-scan: true
+      #   env:
+      #     FOD_URL: ${{ vars.FOD_PORTAL_URL }}
+      #     FOD_CLIENT_ID: ${{secrets.FOD_API_KEY}}
+      #     FOD_CLIENT_SECRET: ${{secrets.FOD_API_SECRET}}
+      #     FOD_RELEASE: ${{env.FOD_RELEASE}}
+      #     # FOD_RELEASE: MyApp:MyRelease
+      #     EXTRA_PACKAGE_OPTS: -oss
+      #     FOD_SAST_SCAN_EXTRA_OPTS: --notes="${{env.FOD_UPLOADER_NOTES}}"
+      #     DO_WAIT: true
+      #     # DO_EXPORT: true
+      #     DO_PACKAGE_DEBUG: true
+
+      - name: ScanCentral - SAST
+        if: ${{ env.SCAN_TYPE == 'sc-sast' }}
+        run: |
+           ${FCLI_CMD} ssc session login --url "${{ secrets.SSC_URL }}" --token "${{ secrets.SSC_TOKEN }}" --sc-sast-url "${{secrets.SCSAST_URL}}/scancentral-ctrl" --client-auth-token "${{secrets.CLIENT_AUTH_TOKEN}}"
+           ${FCLI_CMD} sc-sast scan start -f fortifypackage.zip --publish-to "${{env.SSC_APP_NAME}}:${{env.SSC_APP_VER_NAME}}" --store sc_sast_scan --sargs "${{ env.SC_SAST_SARGS }}"
+           ${FCLI_CMD} sc-sast scan wait-for ::sc_sast_scan::
+           ${FCLI_CMD} ssc session logout
+
+      - name: Upload fortifypackage.zip
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: fortifypackage
+          path: fortifypackage.zip
+          retention-days: 1
+
+      # - name: Scancentral - SAST
+      #   if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
+      #   uses: fortify/github-action@v2
+      #   with:
+      #     sast-scan: true
+      #   env:
+      #     SSC_URL: ${{secrets.SSC_URL}}
+      #     SSC_TOKEN: ${{secrets.SSC_TOKEN}}
+      #     SC_SAST_TOKEN: ${{secrets.CLIENT_AUTH_TOKEN}}
+      #     SSC_APPVERSION: "${{env.SSC_APP_NAME}}:${{env.SSC_APP_VER_NAME}}"
+      #     SSC_LOGIN_EXTRA_OPTS: --sc-sast-url ${{secrets.SCSAST_URL}}/scancentral-ctrl
+      #     SC_SAST_SCAN_EXTRA_OPTS: --sargs "${{ env.SC_SAST_SARGS }}"
+      #     DO_PACKAGE_DEBUG: true
+      #     DO_WAIT: true
 
 

@@ -1,0 +1,56 @@
+name: Fortify Aviator
+on:
+  workflow_dispatch:  # Allows manual trigger with inputs
+  push:
+    branches:
+      - 'dev/*'
+env:
+  AVIATOR_APP_NAME: "petstore"
+
+  SSC_APP_NAME: petstore
+  SSC_APP_VER_NAME: "v2"
+
+jobs:
+  fortify-sast-aviator:
+    name: Fortify SAST Aviator Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup Fortify tools
+        uses: fortify/github-action/setup@v2
+        with:
+          export-path: true
+          fcli: latest
+      - name: Use Jar based FCLI
+        id: use-fcli
+        run: |
+          # install the java platform of fcli (jar)
+          ${FCLI_CMD} tool fcli install --platform java
+          TOOLS_JSON=$(${FCLI_CMD} tool fcli list -q "installDir != null" -o json)
+          # echo "tools-json: $TOOLS_JSON"
+
+          INSTALL_DIR=$(echo "$TOOLS_JSON" | jq -r '.[0].installDir // empty')
+          if [ -z "$INSTALL_DIR" ]; then
+            echo "No installDir found in fcli tool list output" >&2
+            exit 1
+          fi
+          # Export PATH and FCLI_JAR for subsequent steps
+          echo "PATH=$BIN_DIR:$PATH" >> $GITHUB_ENV
+          echo "FCLI_JAR=$INSTALL_DIR/fcli.jar" >> $GITHUB_ENV
+
+      - name: Setup Aviator Prerequisites
+        shell: bash
+        run: |
+          printf "%s" "${{secrets.FORTIFY_AVIATOR_TOKEN}}" > aviator_token.json
+          java -jar "$FCLI_JAR" aviator session login --url "${{ vars.FORTIFY_AVIATOR_URL }}" --token aviator_token.json
+          java -jar "$FCLI_JAR" ssc session login --token "${{ secrets.SSC_TOKEN }}" --url "${{ secrets.SSC_URL }}"
+
+      - name: Aviator Audit
+        run: |
+          java -jar "$FCLI_JAR" aviator ssc audit --av "${{env.SSC_APP_NAME}}:${{env.SSC_APP_VER_NAME}}" --app "${{env.AVIATOR_APP_NAME}}" 
+
+      - name: Cleanup
+        if: ${{ always() }}
+        run: |
+          java -jar "$FCLI_JAR" ssc session logout || true
+          java -jar "$FCLI_JAR" aviator session logout || true
