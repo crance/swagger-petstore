@@ -25,7 +25,9 @@ jobs:
         run: |
           # ${FCLI_CMD} tool fcli list-platforms
           ${FCLI_CMD} tool fcli install --platform java 
+          fcli tool fcli list
           ls -laR /home/runner/fortify/tools/fcli
+          command -v fcli
 
       - name: Setup Aviator Prerequisites
         run: |
