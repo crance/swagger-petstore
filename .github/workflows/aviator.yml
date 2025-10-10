@@ -22,11 +22,26 @@ jobs:
           export-path: true
           fcli: latest
       - name: Use Jar based FCLI
+        id: use-fcli
         run: |
-          # ${FCLI_CMD} tool fcli list-platforms
-          ${FCLI_CMD} tool fcli install --platform java 
-          # ${FCLI_CMD} tool fcli list -o json
-          ${FCLI_CMD} tool fcli list -q "?[installDir]"
+          # install the java platform of fcli (jar)
+          ${FCLI_CMD} tool fcli install --platform java
+          # Use SpEL to select records where installDir is present and prefer tool with name 'fcli'
+          # project installDir and binDir, output JSON (assumes jq is already present on the runner)
+          TOOLS_JSON=$(${FCLI_CMD} tool fcli list -q "[?name=='fcli' && installDir != null].{install:installDir,bin:binDir} | [?]" -o json)
+          echo "tools-json: $TOOLS_JSON"
+          # extract first matching installDir and binDir
+          INSTALL_DIR=$(echo "$TOOLS_JSON" | jq -r '.[0].install // empty')
+          BIN_DIR=$(echo "$TOOLS_JSON" | jq -r '.[0].bin // empty')
+          if [ -z "$INSTALL_DIR" ]; then
+            echo "No installDir found in fcli tool list output" >&2
+            exit 1
+          fi
+          if [ -z "$BIN_DIR" ]; then
+            BIN_DIR="$INSTALL_DIR/bin"
+          fi
+          echo "install-dir=$INSTALL_DIR" >> $GITHUB_OUTPUT
+          echo "bin-dir=$BIN_DIR" >> $GITHUB_OUTPUT
 
       - name: Setup Aviator Prerequisites
         run: |
