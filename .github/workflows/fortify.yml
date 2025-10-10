@@ -123,20 +123,6 @@ jobs:
           path: fortifypackage.zip
           retention-days: 1
 
-      # Archive ScanCentral runner logs (any version) and upload them as an artifact
-      - name: Collect ScanCentral runner logs into artifacts/
-        if: ${{ always() }}
-        run: |
-          cp -r "$HOME"/.fortify .
-
-      - name: Upload ScanCentral runner logs
-        if: ${{ always() && env.SCAN_TYPE == 'sc-sast' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: scancentral-runner-logs
-          path: .fortify
-          retention-days: 1
-
       # - name: Scancentral - SAST
       #   if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
       #   uses: fortify/github-action@v2
