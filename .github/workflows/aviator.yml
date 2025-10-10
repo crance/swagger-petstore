@@ -26,38 +26,31 @@ jobs:
         run: |
           # install the java platform of fcli (jar)
           ${FCLI_CMD} tool fcli install --platform java
-          # Use SpEL to select records where installDir is present and prefer tool with name 'fcli'
-          # project installDir and binDir, output JSON (assumes jq is already present on the runner)
-          # Filter records using a boolean SpEL (only-boolean expressions allowed for --query)
           TOOLS_JSON=$(${FCLI_CMD} tool fcli list -q "installDir != null" -o json)
-          echo "tools-json: $TOOLS_JSON"
-          # extract first matching installDir and binDir
+          # echo "tools-json: $TOOLS_JSON"
+
           INSTALL_DIR=$(echo "$TOOLS_JSON" | jq -r '.[0].installDir // empty')
-          BIN_DIR=$(echo "$TOOLS_JSON" | jq -r '.[0].binDir // empty')
           if [ -z "$INSTALL_DIR" ]; then
             echo "No installDir found in fcli tool list output" >&2
             exit 1
           fi
-          if [ -z "$BIN_DIR" ]; then
-            BIN_DIR="$INSTALL_DIR/bin"
-          fi
-          echo "install-dir=$INSTALL_DIR" >> $GITHUB_OUTPUT
-          echo "bin-dir=$BIN_DIR" >> $GITHUB_OUTPUT
+          # Export PATH and FCLI_JAR for subsequent steps
+          echo "PATH=$BIN_DIR:$PATH" >> $GITHUB_ENV
+          echo "FCLI_JAR=$INSTALL_DIR/fcli.jar" >> $GITHUB_ENV
 
       - name: Setup Aviator Prerequisites
+        shell: bash
         run: |
           printf "%s" "${{secrets.FORTIFY_AVIATOR_TOKEN}}" > aviator_token.json
-          # ${FCLI_CMD} aviator session login --url "${{vars.FORTIFY_AVIATOR_URL}}" --token aviator_token.json
-          # ${FCLI_CMD} ssc session login --token "${{ secrets.SSC_TOKEN }}" --url "${{ secrets.SSC_URL }}"
-          fcli aviator session login --url "https://ams.aviator.fortify.com" --token aviator_token.json
-          fcli ssc session login --token "${{ secrets.SSC_TOKEN }}" --url "${{ secrets.SSC_URL }}"
+          java -jar "$FCLI_JAR" aviator session login --url "https://ams.aviator.fortify.com" --token aviator_token.json
+          java -jar "$FCLI_JAR" ssc session login --token "${{ secrets.SSC_TOKEN }}" --url "${{ secrets.SSC_URL }}"
 
       - name: Aviator Audit
         run: |
-          fcli aviator ssc audit --av "${{env.SSC_APP_NAME}}:${{env.SSC_APP_VER_NAME}}" --app "${{env.AVIATOR_APP_NAME}}" 
+          java -jar "$FCLI_JAR" aviator ssc audit --av "${{env.SSC_APP_NAME}}:${{env.SSC_APP_VER_NAME}}" --app "${{env.AVIATOR_APP_NAME}}" 
 
       - name: Cleanup
         if: ${{ always() }}
         run: |
-          fcli ssc session logout || true
-          fcli aviator session logout || true
+          java -jar "$FCLI_JAR" ssc session logout || true
+          java -jar "$FCLI_JAR" aviator session logout || true
