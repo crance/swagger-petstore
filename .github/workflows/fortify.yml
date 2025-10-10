@@ -94,11 +94,10 @@ jobs:
       #     # DO_EXPORT: true
       #     DO_PACKAGE_DEBUG: true
 
-  # - name: ScanCentral -Package Source Code
-  #   if: ${{ env.SCAN_TYPE == 'sc-sast' }}
-      #   run: |
-      #     ${SC_CLIENT_CMD} package
-  #   env: (optional)
+      - name: ScanCentral -Package Source Code
+        if: ${{ env.SCAN_TYPE == 'sc-sast' }}
+        run: |
+          ${SC_CLIENT_CMD} package
 
       - name: ScanCentral - SAST
         if: ${{ env.SCAN_TYPE == 'sc-sast' }}
