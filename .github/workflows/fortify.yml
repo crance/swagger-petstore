@@ -118,6 +118,7 @@ jobs:
       - name: ScanCentral - SAST
         if: ${{ env.SCAN_TYPE == 'sc-sast' }}
         run: |
+          echo "client_auth_token=${{secrets.CLIENT_AUTH_TOKEN}}" > ${SC_CLIENT_INSTALL_DIR}/Core/config/client.properties
           scancentral -url https://scsast.crance.me/scancentral-ctrl start -bt none -upload -application "eightball" -version "scsast_remotetranslate" -uptoken YzIwNTVhYzktODJjYy00MTFjLTkzZDQtNGFlYzAyMGQwNDY2
 
   # - name: ScanCentral - Setup client.properties
