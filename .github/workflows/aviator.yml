@@ -28,11 +28,12 @@ jobs:
           ${FCLI_CMD} tool fcli install --platform java
           # Use SpEL to select records where installDir is present and prefer tool with name 'fcli'
           # project installDir and binDir, output JSON (assumes jq is already present on the runner)
-          TOOLS_JSON=$(${FCLI_CMD} tool fcli list -q "[?name=='fcli' && installDir != null].{install:installDir,bin:binDir} | [?]" -o json)
+          # Filter records using a boolean SpEL (only-boolean expressions allowed for --query)
+          TOOLS_JSON=$(${FCLI_CMD} tool fcli list -q "installDir != null" -o json)
           echo "tools-json: $TOOLS_JSON"
           # extract first matching installDir and binDir
-          INSTALL_DIR=$(echo "$TOOLS_JSON" | jq -r '.[0].install // empty')
-          BIN_DIR=$(echo "$TOOLS_JSON" | jq -r '.[0].bin // empty')
+          INSTALL_DIR=$(echo "$TOOLS_JSON" | jq -r '.[0].installDir // empty')
+          BIN_DIR=$(echo "$TOOLS_JSON" | jq -r '.[0].binDir // empty')
           if [ -z "$INSTALL_DIR" ]; then
             echo "No installDir found in fcli tool list output" >&2
             exit 1
