@@ -1,4 +1,4 @@
-name: Fortify SAST
+name: Fortify Aviator
 on:
   workflow_dispatch:  # Allows manual trigger with inputs
   push:
@@ -24,13 +24,20 @@ jobs:
 
       - name: Setup Aviator Prerequisites
         run: |
-          printf "%s" "${{secrets.FORTIFY_AVIATOR_TOKEN}}" > aviator_token.json
+          # printf "%s" "${{secrets.FORTIFY_AVIATOR_TOKEN}}" > aviator_token.json
           ${FCLI_CMD} aviator session login --url "${{vars.FORTIFY_AVIATOR_URL}}" --token aviator_token.json
           ${FCLI_CMD} ssc session login --token "${{ secrets.SSC_TOKEN }}" --url "${{ secrets.SSC_URL }}"
 
+      - name: Upload fortifypackage.zip
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test
+          path: aviator_token.json
+          retention-days: 1
+
       - name: Aviator Audit
         run: |
-          printf "%s" "${{secrets.FORTIFY_AVIATOR_TOKEN}}" > aviator_token.json
           ${FCLI_CMD} fcli aviator ssc audit --av "${{env.SSC_APP_NAME}}:${{env.SSC_APP_VER_NAME}}" --app "${{env.AVIATOR_APP_NAME}}" 
 
       - name: Cleanup
