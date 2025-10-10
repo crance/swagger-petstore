@@ -31,8 +31,8 @@ jobs:
           printf "%s" "${{secrets.FORTIFY_AVIATOR_TOKEN}}" > aviator_token.json
           # ${FCLI_CMD} aviator session login --url "${{vars.FORTIFY_AVIATOR_URL}}" --token aviator_token.json
           # ${FCLI_CMD} ssc session login --token "${{ secrets.SSC_TOKEN }}" --url "${{ secrets.SSC_URL }}"
-          /home/runner/fortify/tools/bin/fcli aviator session login --url "${{vars.FORTIFY_AVIATOR_URL}}" --token aviator_token.json
-          /home/runner/fortify/tools/bin/fcli ssc session login --token "${{ secrets.SSC_TOKEN }}" --url "${{ secrets.SSC_URL }}"
+          fcli aviator session login --url "https://ams.aviator.fortify.com" --token aviator_token.json
+          fcli ssc session login --token "${{ secrets.SSC_TOKEN }}" --url "${{ secrets.SSC_URL }}"
 
       - name: Upload fortifypackage.zip
         if: ${{ always() }}
@@ -44,10 +44,10 @@ jobs:
 
       - name: Aviator Audit
         run: |
-          ${FCLI_CMD} fcli aviator ssc audit --av "${{env.SSC_APP_NAME}}:${{env.SSC_APP_VER_NAME}}" --app "${{env.AVIATOR_APP_NAME}}" 
+          fcli aviator ssc audit --av "${{env.SSC_APP_NAME}}:${{env.SSC_APP_VER_NAME}}" --app "${{env.AVIATOR_APP_NAME}}" 
 
       - name: Cleanup
         if: ${{ always() }}
         run: |
-          ${FCLI_CMD} ssc session logout || true
-          ${FCLI_CMD} aviator session logout || true
+          fcli ssc session logout || true
+          fcli aviator session logout || true
