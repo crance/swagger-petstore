@@ -23,15 +23,16 @@ jobs:
           fcli: latest
       - name: Use Jar based FCLI
         run: |
-          ${FCLI_CMD} tool fcli list-platforms
+          # ${FCLI_CMD} tool fcli list-platforms
           ${FCLI_CMD} tool fcli install --platform java
-          ${FCLI_CMD} tool fcli list
 
       - name: Setup Aviator Prerequisites
         run: |
           printf "%s" "${{secrets.FORTIFY_AVIATOR_TOKEN}}" > aviator_token.json
-          ${FCLI_CMD} aviator session login --url "${{vars.FORTIFY_AVIATOR_URL}}" --token aviator_token.json
-          ${FCLI_CMD} ssc session login --token "${{ secrets.SSC_TOKEN }}" --url "${{ secrets.SSC_URL }}"
+          # ${FCLI_CMD} aviator session login --url "${{vars.FORTIFY_AVIATOR_URL}}" --token aviator_token.json
+          # ${FCLI_CMD} ssc session login --token "${{ secrets.SSC_TOKEN }}" --url "${{ secrets.SSC_URL }}"
+          /home/runner/fortify/tools/bin/fcli aviator session login --url "${{vars.FORTIFY_AVIATOR_URL}}" --token aviator_token.json
+          /home/runner/fortify/tools/bin/fcli ssc session login --token "${{ secrets.SSC_TOKEN }}" --url "${{ secrets.SSC_URL }}"
 
       - name: Upload fortifypackage.zip
         if: ${{ always() }}
