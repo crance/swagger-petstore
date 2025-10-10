@@ -25,8 +25,8 @@ jobs:
         run: |
           # ${FCLI_CMD} tool fcli list-platforms
           ${FCLI_CMD} tool fcli install --platform java 
-          ${FCLI_CMD} tool fcli list -o json
-          ${FCLI_CMD} tool fcli list -q "?[installDir].{install:installDir,bin:binDir}"
+          # ${FCLI_CMD} tool fcli list -o json
+          ${FCLI_CMD} tool fcli list -q "?[installDir]"
 
       - name: Setup Aviator Prerequisites
         run: |
