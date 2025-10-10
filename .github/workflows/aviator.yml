@@ -25,8 +25,8 @@ jobs:
         run: |
           # ${FCLI_CMD} tool fcli list-platforms
           ${FCLI_CMD} tool fcli install --platform java 
-          fcli tool fcli list -o json
-          fcli tool fcli list -q "na"
+          ${FCLI_CMD} tool fcli list -o json
+          ${FCLI_CMD} tool fcli list -q "?[installDir].{install:installDir,bin:binDir}"
 
       - name: Setup Aviator Prerequisites
         run: |
@@ -35,14 +35,6 @@ jobs:
           # ${FCLI_CMD} ssc session login --token "${{ secrets.SSC_TOKEN }}" --url "${{ secrets.SSC_URL }}"
           fcli aviator session login --url "https://ams.aviator.fortify.com" --token aviator_token.json
           fcli ssc session login --token "${{ secrets.SSC_TOKEN }}" --url "${{ secrets.SSC_URL }}"
-
-      - name: Upload fortifypackage.zip
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: test
-          path: aviator_token.json
-          retention-days: 1
 
       - name: Aviator Audit
         run: |
