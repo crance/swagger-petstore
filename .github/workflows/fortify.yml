@@ -68,6 +68,19 @@ jobs:
         if: ${{ env.SCAN_TYPE == 'fod-sast' }}
         run: |
           ${SC_CLIENT_CMD} package -oss
+      - name: ScanCentral -Package Source Code
+        if: ${{ env.SCAN_TYPE == 'sc-sast' }}
+        run: |
+          ${SC_CLIENT_CMD} package
+
+      - name: Cache local Maven repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
       - name: Fortify on Demand - SAST
         if: ${{ env.SCAN_TYPE == 'fod-sast' }}
         run: |
@@ -94,11 +107,6 @@ jobs:
       #     # DO_EXPORT: true
       #     DO_PACKAGE_DEBUG: true
 
-      - name: ScanCentral -Package Source Code
-        if: ${{ env.SCAN_TYPE == 'sc-sast' }}
-        run: |
-          ${SC_CLIENT_CMD} package
-
       - name: ScanCentral - SAST
         if: ${{ env.SCAN_TYPE == 'sc-sast' }}
         run: |
@@ -107,66 +115,27 @@ jobs:
            ${FCLI_CMD} sc-sast scan wait-for ::sc_sast_scan::
            ${FCLI_CMD} ssc session logout
 
-  # - name: ScanCentral - SAST
-  #   if: ${{ env.SCAN_TYPE == 'sc-sast' }}
-      #   run: |
-      #     echo "client_auth_token=${{secrets.CLIENT_AUTH_TOKEN}}" > ${SC_CLIENT_INSTALL_DIR}/Core/config/client.properties
-      #     ${SC_CLIENT_CMD} -url "${{secrets.SCSAST_URL}}/scancentral-ctrl" -ssctoken "${{ secrets.SSC_TOKEN }}" start -upload -application "${{env.SSC_APP_NAME}}" -version "${{env.SSC_APP_VER_NAME}}" -projroot ".fortify" -uptoken "${{ secrets.SSC_TOKEN }}" 
-
-      # Test Hardcode
-      # - name: ScanCentral - SAST
-      #   if: ${{ env.SCAN_TYPE == 'sc-sast' }}
-      #   run: |
-      #     echo "client_auth_token=${{secrets.CLIENT_AUTH_TOKEN}}" > ${SC_CLIENT_INSTALL_DIR}/Core/config/client.properties
-      #     scancentral -url https://scsast.crance.me/scancentral-ctrl start -bt none -upload -application "eightball" -version "scsast_remotetranslate" -uptoken YzIwNTVhYzktODJjYy00MTFjLTkzZDQtNGFlYzAyMGQwNDY2
-
-  # - name: ScanCentral - Setup client.properties
-  #   if: ${{ env.SCAN_TYPE == 'sc-sast' }}
-      #   run: |          
-      #     echo "client_auth_token=${{secrets.CLIENT_AUTH_TOKEN}}" > ${SC_CLIENT_INSTALL_DIR}/Core/config/client.properties
-      #     echo "restapi_connect_timeout=60000" >> ${SC_CLIENT_INSTALL_DIR}/Core/config/client.properties
-      #     echo "restapi_read_timeout=70000" >> ${SC_CLIENT_INSTALL_DIR}/Core/config/client.properties
-  # - name: ScanCentral -Package Source Code
-  #   if: ${{ env.SCAN_TYPE == 'sc-sast' }}
-      #   run: |
-      #     ${SC_CLIENT_CMD} package
-      #   env:
-      #     SCANCENTRAL_JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
-
-      # - name: Cache local Maven repository
-      #   uses: actions/cache@v4
-      #   with:
-      #     path: ~/.m2/repository
-      #     key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-maven-
-
-      # - name: Upload fortifypackage.zip
-      #   if: ${{ always() }}
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: fortifypackage
-      #     path: fortifypackage.zip
-      #     retention-days: 1
-
-  # - name: ScanCentral - SAST
-  #   if: ${{ env.SCAN_TYPE == 'sc-sast' }}
-      #   run: |
-      #     ${SC_CLIENT_CMD} -debug -url "${{vars.SCSAST_URL}}/scancentral-ctrl" -ssctoken "${{ secrets.SSC_TOKEN }}" start --package "fortifypackage.zip" -upload -application "${{env.SSC_APP_NAME}}" -version "${{env.SSC_APP_VER_NAME}}" -uptoken "${{ secrets.SSC_TOKEN }}" 
+      - name: Upload fortifypackage.zip
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: fortifypackage
+          path: fortifypackage.zip
+          retention-days: 1
 
       # Archive ScanCentral runner logs (any version) and upload them as an artifact
-      # - name: Collect ScanCentral runner logs into artifacts/
-      #   if: ${{ always() }}
-      #   run: |
-      #     cp -r "$HOME"/.fortify .
+      - name: Collect ScanCentral runner logs into artifacts/
+        if: ${{ always() }}
+        run: |
+          cp -r "$HOME"/.fortify .
 
-      # - name: Upload ScanCentral runner logs
-      #   if: ${{ always() }}
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: scancentral-runner-logs
-      #     path: .fortify
-      #     retention-days: 1
+      - name: Upload ScanCentral runner logs
+        if: ${{ always() && env.SCAN_TYPE == 'sc-sast' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: scancentral-runner-logs
+          path: .fortify
+          retention-days: 1
 
       # - name: Scancentral - SAST
       #   if: ${{ github.event.inputs.scan_type == 'sc-sast' }}
