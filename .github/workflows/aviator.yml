@@ -1,0 +1,40 @@
+name: Fortify SAST
+on:
+  workflow_dispatch:  # Allows manual trigger with inputs
+  push:
+    branches:
+      - 'dev/*'
+env:
+  AVIATOR_APP_NAME: "Petstore"
+
+  SSC_APP_NAME: petstore
+  SSC_APP_VER_NAME: "v2"
+
+jobs:
+  fortify-sast-aviator:
+    name: Fortify SAST Aviator Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup Fortify tools
+        uses: fortify/github-action/setup@v2
+        with:
+          export-path: true
+          fcli: latest
+
+      - name: Setup Aviator Prerequisites
+        run: |
+          printf "%s" "${{secrets.FORTIFY_AVIATOR_TOKEN}}" > aviator_token.json
+          ${FCLI_CMD} aviator session login --url "${{vars.FORTIFY_AVIATOR_URL}}" --token aviator_token.json
+          ${FCLI_CMD} ssc session login --token "${{ secrets.SSC_TOKEN }}" --url "${{ secrets.SSC_URL }}"
+
+      - name: Aviator Audit
+        run: |
+          printf "%s" "${{secrets.FORTIFY_AVIATOR_TOKEN}}" > aviator_token.json
+          ${FCLI_CMD} fcli aviator ssc audit --av "${{env.SSC_APP_NAME}}:${{env.SSC_APP_VER_NAME}}" --app "${{env.AVIATOR_APP_NAME}}" 
+
+      - name: Cleanup
+        if: ${{ always() }}
+        run: |
+          ${FCLI_CMD} ssc session logout || true
+          ${FCLI_CMD} aviator session logout || true
