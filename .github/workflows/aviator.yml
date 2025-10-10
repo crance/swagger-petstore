@@ -5,7 +5,7 @@ on:
     branches:
       - 'dev/*'
 env:
-  AVIATOR_APP_NAME: "Petstore"
+  AVIATOR_APP_NAME: "petstore"
 
   SSC_APP_NAME: petstore
   SSC_APP_VER_NAME: "v2"
@@ -42,7 +42,7 @@ jobs:
         shell: bash
         run: |
           printf "%s" "${{secrets.FORTIFY_AVIATOR_TOKEN}}" > aviator_token.json
-          java -jar "$FCLI_JAR" aviator session login --url "https://ams.aviator.fortify.com" --token aviator_token.json
+          java -jar "$FCLI_JAR" aviator session login --url "${{ vars.FORTIFY_AVIATOR_URL }}" --token aviator_token.json
           java -jar "$FCLI_JAR" ssc session login --token "${{ secrets.SSC_TOKEN }}" --url "${{ secrets.SSC_URL }}"
 
       - name: Aviator Audit
