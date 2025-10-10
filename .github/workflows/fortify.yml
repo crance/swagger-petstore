@@ -64,7 +64,7 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
-              
+
       - name: Setup Fortify tools
         uses: fortify/github-action/setup@v2
         with:
@@ -111,7 +111,7 @@ jobs:
         if: ${{ env.SCAN_TYPE == 'sc-sast' }}
         run: |
            ${FCLI_CMD} ssc session login --url "${{ secrets.SSC_URL }}" --token "${{ secrets.SSC_TOKEN }}" --sc-sast-url "${{secrets.SCSAST_URL}}/scancentral-ctrl" --client-auth-token "${{secrets.CLIENT_AUTH_TOKEN}}"
-           ${FCLI_CMD} sc-sast scan start -f fortifypackage.zip --publish-to "${{env.SSC_APP_NAME}}:${{env.SSC_APP_VER_NAME}}" --store sc_sast_scan --no-replace
+           ${FCLI_CMD} sc-sast scan start -f fortifypackage.zip --publish-to "${{env.SSC_APP_NAME}}:${{env.SSC_APP_VER_NAME}}" --store sc_sast_scan --sargs "${{ env.SC_SAST_SARGS }}"
            ${FCLI_CMD} sc-sast scan wait-for ::sc_sast_scan::
            ${FCLI_CMD} ssc session logout
 
