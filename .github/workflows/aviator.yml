@@ -24,7 +24,7 @@ jobs:
 
       - name: Setup Aviator Prerequisites
         run: |
-          # printf "%s" "${{secrets.FORTIFY_AVIATOR_TOKEN}}" > aviator_token.json
+          printf "%s" "${{secrets.FORTIFY_AVIATOR_TOKEN}}" > aviator_token.json
           ${FCLI_CMD} aviator session login --url "${{vars.FORTIFY_AVIATOR_URL}}" --token aviator_token.json
           ${FCLI_CMD} ssc session login --token "${{ secrets.SSC_TOKEN }}" --url "${{ secrets.SSC_URL }}"
 
