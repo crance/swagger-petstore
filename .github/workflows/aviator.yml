@@ -24,7 +24,7 @@ jobs:
       - name: Use Jar based FCLI
         run: |
           # ${FCLI_CMD} tool fcli list-platforms
-          ${FCLI_CMD} tool fcli install --platform java
+          ${FCLI_CMD} tool fcli install --platform java --base-dir "~/work/_temp/fortify/tools"
 
       - name: Setup Aviator Prerequisites
         run: |
