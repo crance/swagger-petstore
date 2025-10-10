@@ -25,7 +25,7 @@ jobs:
         run: |
           # ${FCLI_CMD} tool fcli list-platforms
           ${FCLI_CMD} tool fcli install --platform java 
-          fcli tool fcli list
+          fcli tool fcli list -o json
           fcli tool fcli list -q "na"
 
       - name: Setup Aviator Prerequisites
