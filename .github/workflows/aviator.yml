@@ -15,6 +15,9 @@ env:
 jobs:
   fortify-sast-aviator:
     name: Fortify SAST Aviator Audit
+    # Run the job either when manually dispatched (workflow_dispatch) or
+    # when triggered by workflow_run and the upstream workflow concluded successfully.
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
