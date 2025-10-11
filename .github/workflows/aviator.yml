@@ -1,9 +1,11 @@
 name: Fortify Aviator
 on:
   workflow_dispatch:  # Allows manual trigger with inputs
-  push:
-    branches:
-      - 'dev/*'
+  workflow_run:
+    workflows: ["Fortify SAST"]
+    types:
+      - completed
+
 env:
   AVIATOR_APP_NAME: "petstore"
 

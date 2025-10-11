@@ -25,6 +25,11 @@ on:
   push:
     branches:
       - 'dev/*'
+      - 'demo/*'
+  pull_request:
+    branches:
+      - 'dev/*'
+      - 'demo/*'
 
 env:
   FOD_RELEASE: "Petstore:v2"
